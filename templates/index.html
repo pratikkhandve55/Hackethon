@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Blood Bridge — Vertical Interface (Interactive)</title>
+<meta name="description" content="Vertical, animated frontend for Blood Bridge — OTP login + Hospital SOS (sim + backend)" />
+<style>
+  :root{
+    --sos-red:#EF4444; --donor-green:#10B981; --navy:#0F172A; --muted:#6B7280;
+    --bg-start:#fbfdff; --bg-end:#ffffff;
+    --card-radius:14px; --shadow: 0 18px 50px rgba(2,6,23,0.08);
+    --glass: rgba(255,255,255,0.7);
+    --maxw:760px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+    background: linear-gradient(180deg,var(--bg-start),var(--bg-end));
+    color:var(--navy);
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color: transparent;
+    padding:20px;
+    display:flex;
+    justify-content:center;
+  }
+  .app{width:100%; max-width:var(--maxw); display:flex; flex-direction:column; gap:18px; align-items:stretch;}
+  header{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;background:linear-gradient(90deg,var(--sos-red),var(--navy));color:white;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .logo{width:56px;height:56px;border-radius:12px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+  header h1{font-size:18px;margin-bottom:2px}
+  header p{opacity:0.92;font-size:13px;margin:0}
+  .blob{position:absolute;border-radius:50%;filter:blur(36px);opacity:0.12;transform-origin:center}
+  .blob.b1{width:260px;height:260px;right:-80px;top:-80px;background:#fff}
+  .blob.b2{width:160px;height:160px;left:-40px;bottom:-40px;background:#000}
+  .card{background:linear-gradient(180deg,#fff,#fcfdff);border-radius:var(--card-radius);padding:18px;box-shadow:0 12px 36px rgba(2,6,23,0.06);transform-origin:top center;overflow:hidden;}
+  .enter-up { animation:enterUp .5s cubic-bezier(.2,.9,.2,1) both; }
+  @keyframes enterUp { from{opacity:0; transform:translateY(14px) scale(.995)} to{opacity:1; transform:none} }
+  .muted{color:var(--muted); font-size:13px}
+  .form-col{display:flex;flex-direction:column;gap:10px}
+  input,select,button{padding:12px;border-radius:12px;border:1px solid #e8edf4;font-size:15px}
+  input:focus,select:focus{outline:none;border-color:var(--sos-red); box-shadow:0 6px 22px rgba(239,68,68,0.08)}
+  .row{display:flex;gap:8px;align-items:center}
+  .center{display:flex;justify-content:center;align-items:center}
+  button{cursor:pointer}
+  .btn-primary{background:var(--sos-red);color:#fff;border:none;padding:12px 14px;border-radius:12px;font-weight:700}
+  .btn-ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:10px 12px;border-radius:10px}
+  .small{font-size:13px;color:var(--muted)}
+  .otp-row{display:flex;gap:8px}
+  .otp{width:64px;text-align:center;font-weight:700;border-radius:12px}
+  .donor-list{display:flex;flex-direction:column;gap:8px;margin-top:12px; max-height:300px; overflow-y:auto; padding-right:4px;}
+  .donor-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid #f1f5f9;background:linear-gradient(180deg,#fff,#fbfbff)}
+  .chip{padding:8px 10px;border-radius:999px;background:#fff;border:1px solid rgba(15,23,42,0.04);font-weight:700}
+  .card .btn-primary:hover{transform:translateY(-2px);transition:transform .18s}
+  .donor-item button{background:var(--donor-green);color:#fff;border:none;padding:8px 10px;border-radius:8px;font-weight:700}
+  @media (max-width:480px){ .otp{width:48px} .logo{width:48px;height:48px} }
+  .steps{display:flex;gap:8px;margin-top:6px}
+  .step{flex:1;height:8px;border-radius:999px;background:#f3f4f6;overflow:hidden}
+  .step .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--donor-green),var(--sos-red));transition:width .6s cubic-bezier(.2,.9,.2,1)}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:28px;background:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 12px 36px rgba(2,6,23,0.12);font-weight:700}
+  .fade-in{animation:fadeIn .45s ease both}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  .hidden{display:none}
+@keyframes scaleUp {
+  0% { transform: scale(0); opacity:0; }
+  50% { transform: scale(1.2); opacity:1; }
+  100% { transform: scale(1); }
+}
+@keyframes fadeIn {
+  0% { opacity:0; }
+  100% { opacity:1; }
+}
+
+.loader {
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+  margin-top:16px;
+}
+@keyframes spin {
+  0%{ transform: rotate(0deg); }
+  100%{ transform: rotate(360deg); }
+}
+
+/* footer  */
+body {
+  font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+  background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
+  color: var(--navy);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* ensures full height */
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+#donorList {
+  max-height: 60px;   /* adjust as needed */
+  overflow-y: auto;    /* scroll only inside donor list */
+  margin-bottom: 20px;
+}
+
+.app {
+  width: 100%;
+  max-width: var(--maxw);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+  flex: 1; /* pushes footer down */
+  margin-top: 60px;
+}
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;       /* example */
+  /* background: black; */
+  color: white;
+  z-index: 1000;
+}
+
+
+footer {
+  background: linear-gradient(to right, black, red);
+  color: white;
+  text-align: center;
+  padding: 15px 0px;
+  margin-top: auto; /* pushes footer to bottom */
+  width: 100%;
+  position: relative;
+}
+
+    footer p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    footer a {
+      color: #ffcccc;
+      text-decoration: none;
+      margin: 0 10px;
+      font-weight: bold;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+  <div class="loader"></div>
+  <div id="splashScreen" style="
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  background: linear-gradient(180deg, #b5a7d3, #7a73fc); /* purple bg */
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; z-index:9999;
+">
+  <img src="static/logo.png" alt="Logo" style="width:240px;height:240px;animation:scaleUp 1.5s ease-in-out;">
+  <!-- <h style="color:white; margin-top:12px; font-size:24px; font-weight:800; animation:fadeIn 2s;">Blood Bridge</h1> -->
+</div>
+
+  <div class="app">
+
+    <!-- Header -->
+    <header class="enter-up" role="banner" aria-label="Blood Bridge header">
+  <img src="static/logo.png" alt="Logo" style="width:80px;height:80px;animation:scaleUp 1.5s ease-in-out;">
+      <div>
+        <h1>Blood Bridge</h1>
+        <p>Our Blood, Their Life — instant SOS donor matching</p>
+      </div>
+      <div style="margin-left:auto" class="chip small" id="modeChip">Mode: <span id="mode">Detecting...</span></div>
+      <div class="blob b1" aria-hidden="true"></div>
+      <div class="blob b2" aria-hidden="true"></div>
+    </header>
+
+    <!-- LOGIN CARD -->
+    <section class="card enter-up" id="loginCard" aria-labelledby="loginTitle">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div id="loginTitle" style="font-weight:800;font-size:16px">Sign in with phone (OTP)</div>
+            <div class="small muted"> <strong>1234</strong></div>
+          </div>
+          <div class="chip small" id="status">Ready</div>
+        </div>
+
+        <div class="form-col" style="margin-top:8px">
+          <label class="small">Phone number</label>
+          <input id="phone" type="tel" placeholder="+919876543210" inputmode="tel" />
+          <div class="row" style="margin-top:6px">
+            <button class="btn-primary" id="sendOtp">Send OTP</button>
+            <button class="btn-ghost" id="guest">Continue as Guest</button>
+          </div>
+          <div id="otpArea" class="hidden">
+            <label class="small">Enter OTP</label>
+            <input id="otp" type="text" placeholder="Enter OTP" />
+            <button class="btn-primary" id="verifyOtp">Verify OTP</button>
+          </div>
+          <div class="row" style="margin-top:8px;align-items:center;gap:12px">
+            <button class="btn-ghost" id="resend">Resend</button>
+            <!-- <div class="small muted" style="margin-left:auto">Simulated / backend available</div> -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOSPITAL SOS CARD -->
+    <section class="card enter-up hidden" id="hospitalCard" aria-labelledby="sosTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div id="sosTitle" style="font-weight:800;font-size:16px">Hospital — Raise SOS</div>
+          <!-- <div class="small muted">Fill the form, press Send SOS. Demo shows simulated donors or uses backend if detected.</div> -->
+        </div>
+        <div class="chip small" id="hospitalIdChip">Hospital: <span id="hospitalId">1</span></div>
+      </div>
+
+      <div class="form-col" style="margin-top:12px">
+        <label class="small">Hospital name</label>
+        <input id="hName" placeholder="City Hospital" />
+        <label class="small">Contact phone</label>
+        <input id="hPhone" placeholder="+91 98xxxx" />
+        <label class="small">Patient name</label>
+        <input id="patientName" placeholder="Patient name" />
+        <div class="row" style="justify-content:space-between">
+          <div style="flex:1">
+            <label class="small">Blood group</label>
+            <select id="bloodGroup">
+              <option value="">Select</option>
+              <option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+            </select>
+          </div>
+          <div style="width:120px">
+            <label class="small">Units</label>
+            <input id="units" type="number" min="1" value="1" />
+          </div>
+        </div>
+
+        <div class="steps" aria-hidden="true">
+          <div class="step"><div class="bar" id="bar1"></div></div>
+          <div class="step"><div class="bar" id="bar2"></div></div>
+          <div class="step"><div class="bar" id="bar3"></div></div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn-primary" id="sendSos">Send SOS</button>
+          <button class="btn-ghost" id="simulate">Show simulated donors</button>
+          <button class="btn-ghost" id="resetForm">Reset</button>
+        </div>
+
+<div class="donor-list-wrapper" style="margin-top:12px; max-height:300px; overflow-y:auto;">
+  <div class="donor-list" id="donorList" aria-live="polite"></div>
+</div>
+      </div>
+    </section>
+
+    <div class="small muted center">Prototype — for demo & pitching. Connect to real backend for production behavior.</div>
+  </div>
+
+  <div id="toastRoot" aria-hidden="true"></div>
+
+<script>
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const splash = document.getElementById('splashScreen');
+    splash.style.transition = 'opacity 0.6s ease';
+    splash.style.opacity = 0;
+    setTimeout(() => splash.style.display = 'none', 600);
+  }, 3000); // show for 3 seconds
+});
+
+
+const modeEl=document.getElementById('mode'), loginCard=document.getElementById('loginCard'), otpArea=document.getElementById('otpArea'), loginBtn=document.getElementById('sendOtp'), verifyBtn=document.getElementById('verifyOtp'), guestBtn=document.getElementById('guest');
+const hospitalCard=document.getElementById('hospitalCard'), hospitalIdSpan=document.getElementById('hospitalId');
+let appMode='simulated', currentUserId=null, currentHospitalId=null;
+
+const donorList=document.getElementById('donorList');
+
+function showToast(msg,duration=1400){
+  const t=document.createElement('div'); t.className='toast fade-in'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),duration);
+}
+
+// OTP login logic (unchanged)
+loginBtn.addEventListener('click', async ()=>{
+  const phone=document.getElementById('phone').value.trim();
+  if(!phone){ alert('Enter phone'); return; }
+  showToast('SIM: OTP sent (use 1234)',1600);
+  otpArea.classList.remove('hidden'); document.getElementById('otp').focus();
+});
+
+verifyBtn.addEventListener('click', ()=>{
+  const code=document.getElementById('otp').value.trim();
+  if(code==='1234'){ currentUserId=999; currentHospitalId='SIM-1'; hospitalIdSpan.textContent=currentHospitalId; openHospital(); showToast('SIM: Logged in'); }
+  else alert('Wrong OTP (use 1234)');
+});
+
+guestBtn.addEventListener('click', ()=>{ currentUserId=0; currentHospitalId='SIM-1'; hospitalIdSpan.textContent=currentHospitalId; openHospital(); });
+
+function openHospital(){ loginCard.classList.add('hidden'); hospitalCard.classList.remove('hidden'); document.getElementById('hName').focus(); }
+
+// SOS simulation
+document.getElementById('simulate').addEventListener('click',()=>{
+  donorList.innerHTML='';
+  const donors=[];
+  donors.forEach(d=>{
+    const div=document.createElement('div'); div.className='donor-item';
+    div.innerHTML=`<span>${d.name} (${d.bg})</span><button onclick="alert('Call ${d.phone}')">Call</button>`;
+    donorList.appendChild(div);
+  });
+  showToast('Showing simulated donors');
+});
+
+// Send SOS with backend fetch (scrollable donor list)
+document.getElementById('sendSos').addEventListener('click', async () => {
+  const patientName = document.getElementById('patientName').value || 'Unknown';
+  const bloodGroup = document.getElementById('bloodGroup').value;
+
+  if(!bloodGroup){
+    showToast('Select a blood group first');
+    return;
+  }
+
+  showToast('Fetching matching donors...');
+
+  // Clear previous donor list
+  const donorListWrapper = document.querySelector('.donor-list-wrapper');
+  const donorListEl = document.getElementById('donorList');
+  donorListEl.innerHTML = '';
+
+  try {
+    const res = await fetch('http://127.0.0.1:5000/request-blood', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        hospital: document.getElementById('hName').value || 'Demo Hospital',
+        patient_name: patientName,
+        bloodGroup: bloodGroup
+      })
+    });
+
+    const data = await res.json();
+    const donors = data.donors || [];
+
+    if(donors.length === 0){
+      donorListEl.innerHTML = '<div class="small muted">No donors available for this blood group</div>';
+      return;
+    }
+
+    // Render donors
+    donors.forEach(d => {
+      const item = document.createElement('div');
+      item.className = 'donor-item fade-in';
+      item.innerHTML = `
+        <div>
+          <div style="font-weight:800">${d.name} • <span style="font-weight:600;color:var(--muted);font-size:13px">${d.bloodGroup}</span></div>
+          <div class="small muted" style="margin-top:6px">${d.phone}</div>
+        </div>
+        <div>
+          <button onclick="acceptDonor('${d.phone}')">Accept</button>
+        </div>
+      `;
+      donorListEl.appendChild(item);
+    });
+
+    donorListWrapper.style.maxHeight = '300px';
+    donorListWrapper.style.overflowY = 'auto';
+
+  } catch(e) {
+    showToast('Backend error — cannot fetch donors', 2000);
+    console.error(e);
+  }
+});
+
+
+// Reset form
+document.getElementById('resetForm').addEventListener('click',()=>{
+  hospitalCard.querySelectorAll('input,select').forEach(i=>i.value=''); 
+  donorList.innerHTML=''; 
+  document.getElementById('bar1').style.width='0%';
+  document.getElementById('bar2').style.width='0%';
+  document.getElementById('bar3').style.width='0%';
+});
+</script>
+<footer>
+    <p>© 2025 SOS Blood Donation | Built with ❤️ for Humanity</p>
+    <p>
+      <a href="#">About Us</a> | 
+      <a href="#">Contact</a> | 
+      <a href="#">Privacy Policy</a> | 
+      <a href="#">Help</a>
+    </p>
+  </footer>
+</body>
+</html>
