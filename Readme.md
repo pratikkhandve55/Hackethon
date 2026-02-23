@@ -1,4 +1,3 @@
-homepage.jpg
 🩸Blood SOS – Emergency Blood Request System
 
 A full-stack web application that allows hospitals to raise emergency blood requests and connect with registered donors efficiently.
@@ -7,9 +6,6 @@ This project demonstrates backend development, authentication, database integrat
 
 Features
 
-
-hospital.jpg
-sos.jpg
 **Hospital**
 	•	Register hospital details
 	•	Login using OTP authentication
@@ -42,3 +38,13 @@ Backend:
 Database:
 	•	MongoDB
 
+## 📸 Screenshots
+
+###  Home Page
+![Home Page](homepage.jpg)
+
+###  Hospital Card
+![Hospital Card](hospitalcard.jpg)
+
+###  SOS Page
+![SOS Page](sos.jpg)
