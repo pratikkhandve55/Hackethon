@@ -6,16 +6,17 @@ This project demonstrates backend development, authentication, database integrat
 
 Features
 
-Hospital
+**Hospital**
 	•	Register hospital details
 	•	Login using OTP authentication
 	•	Raise emergency SOS request
- Donor
+** Donor **
 	•	Register as donor
 	•	Store blood group and contact details
 	•	Store current location (Latitude & Longitude)
 
-Twilio SMS API
+** Twilio SMS API **
+
 The application integrates Twilio SMS API to notify registered donors when a hospital raises an emergency blood request (SOS).
 
 When an SOS is triggered:
@@ -23,7 +24,7 @@ When an SOS is triggered:
 	•	SMS notifications are sent automatically
 	•	Donors receive hospital contact details instantly
 
-🛠 Tech Stack
+** Tech Stack **
 
 Frontend:
 	•	HTML
